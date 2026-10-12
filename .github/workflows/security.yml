@@ -1,0 +1,28 @@
+name: Security Reports
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  security:
+    # The build resolves octopus-teamcity-automation-core from GitHub Packages, so it opts in to the
+    # read credentials octopus-base exports (resolve-from-shared-packages, since v3.3.0).
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-security-reports.yml@v3.3.0
+    with:
+      resolve-from-shared-packages: true
+      java-version: "21"
+      enable-codeql: true
+      enable-trivy: true
+      # TODO: Re-enable after dependency-check stability is fixed (NVD API/source reliability).
+      enable-dependency-check: false
+    secrets: inherit

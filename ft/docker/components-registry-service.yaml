@@ -1,0 +1,43 @@
+# FT runs CRS without a Keycloak. CRS 2.0.84-3312+ skips its eager OIDC discovery
+# (and switches to AnonymousSecurityConfig) when this property is true. Method
+# security stays enabled — v1-v3 + v4 reads are anonymous, v4 writes return 403.
+# Must NEVER be set in production: WebSecurityConfig.@ConditionalOnProperty has
+# matchIfMissing = true so a missing prop keeps the prod fail-fast behaviour.
+auth-server:
+  disabled: true
+
+eureka:
+  client:
+    enabled: false
+
+server:
+  port: 4567
+
+components-registry:
+  vcs:
+    enabled: false
+  work-dir: /components-registry
+  groovy-path: ${components-registry.work-dir}
+  main-groovy-file: Aggregator.groovy
+  supportedGroupIds: corp.domain
+  supportedSystems: NONE,CLASSIC
+  version-name:
+    service-branch: serviceCBranch
+    service: serviceC
+    minor: minorC
+  product-type:
+    c: PT_C
+    k: PT_K
+    d: PT_D
+    ddb: PT_D_DB
+
+repositoryPath: /whiskey-builds
+supportedGroupIds: corp.domain
+supportedSystems: NONE,CLASSIC
+
+
+logging:
+  level:
+    org.octopusden.octopus.escrow: DEBUG
+    org.octopusden.octopus.crs: DEBUG
+    org.octopusden.octopus.components.registry: DEBUG

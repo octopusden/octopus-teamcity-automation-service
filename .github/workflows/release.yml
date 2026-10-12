@@ -1,0 +1,24 @@
+name: Gradle Release
+
+on:
+  repository_dispatch:
+    types: release
+
+jobs:
+  build:
+    # The build resolves octopus-teamcity-automation-core from GitHub Packages, so it opts in to the
+    # read credentials octopus-base exports (resolve-from-shared-packages, since v3.3.0).
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v3.3.0
+    permissions:
+      contents: write
+      packages: write
+    with:
+      resolve-from-shared-packages: true
+      flow-type: hybrid
+      java-version: '21'
+      commit-hash: ${{ github.event.client_payload.commit }}
+      build-version: ${{ github.event.client_payload.project_version }}
+      resume-deployment-id: ${{ github.event.client_payload.resume_deployment_id }}
+      docker-image: teamcity-automation-service
+      skip-extra-tasks: ft
+    secrets: inherit

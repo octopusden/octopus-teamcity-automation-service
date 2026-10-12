@@ -1,0 +1,16 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, loggers
+
+logging:
+  # Read back by the ft to prove no credential reaches the log.
+  file:
+    name: /logs/teamcity-automation-service.log
+  level:
+    org.octopusden.octopus.teamcityautomationservice: debug
+    # Deliberately DEBUG: the clients log full exchanges, headers included, at this level. The
+    # service's wire-log filter must keep them out regardless; the ft checks it does.
+    org.octopusden.octopus.infrastructure.teamcity.client.TeamcityClient: debug
+    org.octopusden.octopus.components.registry.client.ComponentsRegistryServiceClient: debug

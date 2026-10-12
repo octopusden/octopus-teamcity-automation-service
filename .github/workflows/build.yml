@@ -1,0 +1,23 @@
+name: Gradle Compile & UT
+
+on:
+  push:
+    branches:
+      - main
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run-build-and-deploy:
+    # The build resolves octopus-teamcity-automation-core from GitHub Packages, so it opts in to the
+    # read credentials octopus-base exports (resolve-from-shared-packages, since v3.3.0).
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-build.yml@v3.3.0
+    with:
+      resolve-from-shared-packages: true
+      flow-type: hybrid
+      java-version: '21'
+      docker-image: teamcity-automation-service
+    secrets: inherit

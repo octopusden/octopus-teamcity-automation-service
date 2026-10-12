@@ -1,0 +1,21 @@
+name: Quality Gates
+
+on:
+  push:
+    branches:
+      - main
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  quality:
+    # The build resolves octopus-teamcity-automation-core from GitHub Packages, so it opts in to the
+    # read credentials octopus-base exports (resolve-from-shared-packages, since v3.3.0).
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-quality-gates.yml@v3.3.0
+    with:
+      resolve-from-shared-packages: true
+      java-version: "21"
+    secrets: inherit

@@ -1,0 +1,28 @@
+# Rehearses a release without publishing anything: dry-run skips every step that leaves the
+# runner (the Sonatype and Portal publishes, the ghcr.io push, the tag, the GitHub Release and the
+# release-log entry), while the Central preflight and the publication guard still run.
+#
+# workflow_dispatch only surfaces workflows present on the default branch, so this file has to
+# reach main before it can be run.
+name: Release Smoke
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: release/smoke
+    # Inputs mirror release.yml with dry-run added, and the commit and version taken from this run.
+    uses: octopusden/octopus-base/.github/workflows/common-java-gradle-release.yml@v3.3.0
+    with:
+      resolve-from-shared-packages: true
+      flow-type: hybrid
+      java-version: '21'
+      commit-hash: ${{ github.sha }}
+      build-version: 0.0.0-smoke-${{ github.run_number }}
+      docker-image: teamcity-automation-service
+      skip-extra-tasks: ft
+      dry-run: true
+    secrets: inherit

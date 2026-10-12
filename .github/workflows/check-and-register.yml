@@ -1,0 +1,19 @@
+name: Check for artifact and register release
+
+on:
+  workflow_run:
+    workflows: ["Gradle Release"]
+    types:
+      - completed
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: octopusden/octopus-base/.github/workflows/common-check-and-register-release.yml@v3.0.2
+    if:  "${{ github.event.workflow_run.conclusion == 'success' }}"
+    with:
+      # The server ships as a docker image only, so poll :client, a library published to Central on every release.
+      artifact-pattern: "octopus/teamcity-automation-service/client/_VER_/client-_VER_.jar"
+    secrets: inherit
