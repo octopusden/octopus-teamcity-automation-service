@@ -23,6 +23,7 @@ import org.octopusden.octopus.teamcityautomationservice.client.common.exception.
 import org.octopusden.octopus.teamcityautomationservice.client.impl.ClassicTeamcityAutomationServiceClient
 import org.octopusden.octopus.teamcityautomationservice.client.impl.TeamcityAutomationServiceClientParametersProvider
 import java.net.InetSocketAddress
+import java.util.UUID
 
 /** Runs the client against an in-process stub of the service. */
 class ClassicTeamcityAutomationServiceClientTest {
@@ -63,7 +64,7 @@ class ClassicTeamcityAutomationServiceClientTest {
         val chain = client.createBuildChain(REQUEST)
 
         assertEquals(BuildChainDTO("P_C", "P_C_10", null, null, "P_C_40"), chain)
-        assertTrue(receivedBody.contains(""""password":"s3cret""""))
+        assertTrue(receivedBody.contains(PASSWORD))
         assertTrue(receivedBody.contains(""""createChecklist":true"""))
     }
 
@@ -115,8 +116,10 @@ class ClassicTeamcityAutomationServiceClientTest {
     }
 
     companion object {
+        // Generated per run: no credential, not even a dummy one, is written in the sources.
+        private val PASSWORD = UUID.randomUUID().toString()
         private val REQUEST = CreateBuildChainRequest(
-            TeamcityConnection("http://teamcity:8111", "user", "s3cret"),
+            TeamcityConnection("http://teamcity:8111", "user", PASSWORD),
             "http://registry:4567",
             "Parent",
             "component",

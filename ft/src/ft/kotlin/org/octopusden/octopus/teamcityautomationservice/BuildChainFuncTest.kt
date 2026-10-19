@@ -365,7 +365,10 @@ class BuildChainFuncTest {
     ) = Base64.getEncoder().encodeToString("$user:$password".toByteArray())
 
     companion object {
-        private const val WRONG_PASSWORD = "ft-wrong-password"
+        // Generated per run: no credential, not even a dummy one, is written in the sources.
+        private val WRONG_PASSWORD = java.util.UUID
+            .randomUUID()
+            .toString()
 
         private fun systemProperty(name: String) = checkNotNull(System.getProperty(name)) { "System property '$name' must be defined" }
 

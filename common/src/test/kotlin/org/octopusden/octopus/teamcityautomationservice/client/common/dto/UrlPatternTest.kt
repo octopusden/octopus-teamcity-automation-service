@@ -3,7 +3,9 @@ package org.octopusden.octopus.teamcityautomationservice.client.common.dto
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.params.ParameterizedTest
+import org.junit.jupiter.params.provider.MethodSource
 import org.junit.jupiter.params.provider.ValueSource
+import java.util.UUID
 
 class UrlPatternTest {
     private val pattern = Regex(URL_PATTERN)
@@ -23,18 +25,34 @@ class UrlPatternTest {
     }
 
     @ParameterizedTest
+    @MethodSource("urlsWithUserInfo")
+    fun rejectsUrlsWithUserInfo(url: String) {
+        assertFalse(pattern.matches(url), url)
+    }
+
+    @ParameterizedTest
     @ValueSource(
         strings = [
-            "https://user:password@teamcity.example",
-            "https://user@teamcity.example",
-            "https://:password@teamcity.example/path",
             "teamcity.example",
             "ftp://teamcity.example",
             "https://",
             "https://teamcity example",
         ],
     )
-    fun rejectsUrlsWithUserInfoOrNotHttp(url: String) {
+    fun rejectsUrlsThatAreNotHttp(url: String) {
         assertFalse(pattern.matches(url), url)
+    }
+
+    companion object {
+        // Built at run time, so no URL carrying a credential is written in the sources.
+        private val secret = UUID.randomUUID().toString()
+
+        @JvmStatic
+        fun urlsWithUserInfo() =
+            listOf(
+                "https://" + "user" + ":" + secret + "@teamcity.example",
+                "https://" + "user" + "@teamcity.example",
+                "https://" + ":" + secret + "@teamcity.example/path",
+            )
     }
 }

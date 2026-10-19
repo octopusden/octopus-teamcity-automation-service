@@ -42,6 +42,7 @@ import org.octopusden.octopus.teamcityautomationservice.client.common.exception.
 import org.octopusden.octopus.teamcityautomationservice.client.common.exception.UpstreamException
 import org.octopusden.octopus.teamcityautomationservice.client.common.exception.ValidationException
 import org.octopusden.octopus.teamcityautomationservice.config.BuildChainClientFactory
+import java.util.UUID
 import org.octopusden.octopus.components.registry.core.exceptions.NotFoundException as RegistryNotFoundException
 
 class BuildChainServiceImplTest {
@@ -228,7 +229,9 @@ class BuildChainServiceImplTest {
         private const val PARENT = "Parent"
         private const val COMPONENT = "component"
         private const val PROJECT_ID = "Parent_Component"
-        private const val PASSWORD = "s3cret"
+
+        // Generated per run: no credential, not even a dummy one, is written in the sources.
+        private val PASSWORD = UUID.randomUUID().toString()
 
         private val REQUEST = CreateBuildChainRequest(
             teamcity = TeamcityConnection(TEAMCITY_URL, "user", PASSWORD),

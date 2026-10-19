@@ -104,12 +104,11 @@ data class TeamcityServer(
         password: String,
         systemAdmin: Boolean = false,
     ) {
-        val roles = if (systemAdmin) ""","roles":{"role":[{"roleId":"SYSTEM_ADMIN","scope":"g"}]}""" else ""
         val response =
             HttpClient.newHttpClient().send(
                 adminRequest("$host/app/rest/users")
                     .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString("""{"username":"$username","password":"$password"$roles}"""))
+                    .POST(HttpRequest.BodyPublishers.ofString(userJson(username, password, systemAdmin)))
                     .build(),
                 HttpResponse.BodyHandlers.ofString(),
             )
@@ -118,6 +117,18 @@ data class TeamcityServer(
         if (response.statusCode() == 400) {
             setPassword(username, password)
         }
+    }
+
+    private fun userJson(
+        username: String,
+        password: String,
+        systemAdmin: Boolean,
+    ): String {
+        val user = mutableMapOf<String, Any>("username" to username, "password" to password)
+        if (systemAdmin) {
+            user["roles"] = mapOf("role" to listOf(mapOf("roleId" to "SYSTEM_ADMIN", "scope" to "g")))
+        }
+        return ObjectMapper().writeValueAsString(user)
     }
 
     private fun setPassword(
@@ -153,7 +164,9 @@ data class TeamcityServer(
         const val SERVICE_USER = "ft-service"
 
         /** Fresh per run; the log check searches for it. */
-        val SERVICE_PASSWORD = "ft-${java.util.UUID.randomUUID()}"
+        val SERVICE_PASSWORD = java.util.UUID
+            .randomUUID()
+            .toString()
 
         // BuildChainConfig defaults of the library; the "Releae" typo is the real template id.
         const val GRADLE_COMPILE_TEMPLATE = "CDGradleBuild"

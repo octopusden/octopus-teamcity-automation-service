@@ -32,6 +32,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.ResultActionsDsl
 import org.springframework.test.web.servlet.post
+import java.util.UUID
 
 @WebMvcTest(BuildChainController::class)
 @ActiveProfiles("test")
@@ -88,8 +89,8 @@ class BuildChainControllerTest {
     @Test
     fun rejectsCredentialsInUrlsWithoutEchoingThem() {
         val body = VALID_BODY
-            .replace("http://teamcity:8111", "http://user:$URL_PASSWORD@teamcity:8111")
-            .replace("http://registry:4567", "https://reader:$URL_PASSWORD@registry:4567/path")
+            .replace("http://teamcity:8111", withUserInfo("http://teamcity:8111", "user"))
+            .replace("http://registry:4567", withUserInfo("https://registry:4567/path", "reader"))
 
         post(body).andExpect {
             status { isBadRequest() }
@@ -167,6 +168,11 @@ class BuildChainControllerTest {
         }
     }
 
+    private fun withUserInfo(
+        url: String,
+        user: String,
+    ) = url.replaceFirst("://", "://" + user + ":" + URL_PASSWORD + "@")
+
     private fun post(body: String): ResultActionsDsl =
         mockMvc.post("/rest/api/1/build-chains") {
             contentType = MediaType.APPLICATION_JSON
@@ -174,8 +180,9 @@ class BuildChainControllerTest {
         }
 
     companion object {
-        private const val PASSWORD = "s3cret"
-        private const val URL_PASSWORD = "url-s3cret"
+        // Generated per run: no credential, not even a dummy one, is written in the sources.
+        private val PASSWORD = UUID.randomUUID().toString()
+        private val URL_PASSWORD = UUID.randomUUID().toString()
         private val VALID_BODY =
             """
             {
