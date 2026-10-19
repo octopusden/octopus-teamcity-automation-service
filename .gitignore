@@ -23,3 +23,6 @@ gradle-app.setting
 # JVM crash logs
 hs_err_pid*
 replay_pid*
+
+# TeamCity DSL generation output
+.teamcity/target/
