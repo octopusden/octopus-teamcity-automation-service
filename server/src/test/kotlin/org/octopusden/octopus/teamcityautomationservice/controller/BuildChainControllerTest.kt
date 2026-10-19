@@ -81,8 +81,23 @@ class BuildChainControllerTest {
     fun rejectsNonHttpUrl() {
         post(VALID_BODY.replace("http://registry:4567", "registry:4567")).andExpect {
             status { isBadRequest() }
-            jsonPath("$.errorMessage") { value("componentsRegistryUrl: must be an http(s) URL") }
+            jsonPath("$.errorMessage") { value("componentsRegistryUrl: must be an http(s) URL without a user or password") }
         }
+    }
+
+    @Test
+    fun rejectsCredentialsInUrlsWithoutEchoingThem() {
+        val body = VALID_BODY
+            .replace("http://teamcity:8111", "http://user:$URL_PASSWORD@teamcity:8111")
+            .replace("http://registry:4567", "https://reader:$URL_PASSWORD@registry:4567/path")
+
+        post(body).andExpect {
+            status { isBadRequest() }
+            jsonPath("$.errorMessage") { value(containsString("teamcity.url: must be an http(s) URL without a user or password")) }
+            jsonPath("$.errorMessage") { value(containsString("componentsRegistryUrl: must be an http(s) URL without a user or password")) }
+            content { string(not(containsString(URL_PASSWORD))) }
+        }
+        verify(buildChainService, never()).createBuildChain(any())
     }
 
     @Test
@@ -160,6 +175,7 @@ class BuildChainControllerTest {
 
     companion object {
         private const val PASSWORD = "s3cret"
+        private const val URL_PASSWORD = "url-s3cret"
         private val VALID_BODY =
             """
             {

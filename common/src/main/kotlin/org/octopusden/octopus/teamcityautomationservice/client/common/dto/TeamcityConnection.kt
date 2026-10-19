@@ -17,5 +17,6 @@ data class TeamcityConnection(
     override fun toString() = "TeamcityConnection(url=$url, user=$user, password=***)"
 }
 
-internal const val URL_PATTERN = "https?://\\S+"
-internal const val URL_MESSAGE = "must be an http(s) URL"
+// No user info: credentials belong in their own fields, and the URL is logged.
+internal const val URL_PATTERN = "https?://[^\\s/?#@]+([/?#]\\S*)?"
+internal const val URL_MESSAGE = "must be an http(s) URL without a user or password"
