@@ -14,10 +14,10 @@ project {
         param("OKD_IMAGE_NAME", "teamcity-automation-service")
         param("env.JAVA_HOME", "%env.JDK_21_0_x64%")
         // octopus-teamcity-automation-core is resolved from GitHub Packages only, which authenticates
-        // every read. OCTOPUS_SHARED_PACKAGES_READ_TOKEN is a password parameter (a classic PAT with
-        // read:packages only) kept on the TeamCity server, not in this open-source repository.
-        param("env.SHARED_PACKAGES_READ_USERNAME", "%OCTOPUS_GITHUB_USERNAME%")
-        param("env.SHARED_PACKAGES_READ_TOKEN", "%OCTOPUS_SHARED_PACKAGES_READ_TOKEN%")
+        // every read. The token (a classic PAT with read:packages only) comes from Vault through the
+        // inherited HashiCorp Vault connection, next to the other octopusden GitHub tokens.
+        text("env.SHARED_PACKAGES_READ_USERNAME", "%OCTOPUS_GITHUB_USERNAME%", readOnly = true, allowEmpty = false)
+        password("env.SHARED_PACKAGES_READ_TOKEN", "%vault:octopus/data/GitHub!/OCTOPUS_SHARED_PACKAGES_READ_TOKEN%", readOnly = true)
     }
 
     buildType(Build)
