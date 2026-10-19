@@ -8,7 +8,6 @@ services:
       - "8080:8080"
     volumes:
       - ./teamcity-automation-service.yaml:/application-ft.yaml
-      - ./../build/service-logs:/logs
     environment:
       - SPRING_CONFIG_ADDITIONAL_LOCATION=/
       - SPRING_PROFILES_ACTIVE=ft

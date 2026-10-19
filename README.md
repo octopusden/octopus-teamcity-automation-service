@@ -76,10 +76,18 @@ exports the `OCTOPUS_SHARED_PACKAGES_READ_TOKEN` repository secret (a classic PA
 
 ## Functional tests
 
-`ft` runs the service image against TeamCity 2022 and 2026 and the Components Registry in Docker:
+`ft` runs the service image against TeamCity 2022 and 2026 and the Components Registry, on Docker
+(the default) or in an OKD namespace:
 
 ```bash
 ./gradlew :ft:ft
 ```
 
-Set `DOCKER_REGISTRY` to pull the TeamCity and registry images through a mirror.
+```bash
+./gradlew :ft:ft -Ptest.platform=okd -Pokd.project=<namespace> -Pokd.cluster-domain=<apps domain>
+```
+
+The same values can come from `TEST_PLATFORM`, `OKD_PROJECT` and `OKD_CLUSTER_DOMAIN`. On OKD the
+pods are created from `okd/*.yaml` with the `oc` CLI, which must be logged in, and the service
+image is pushed to `OCTOPUS_GITHUB_DOCKER_REGISTRY` first so the namespace can pull it. Set
+`DOCKER_REGISTRY` to pull the TeamCity and registry images through a mirror.

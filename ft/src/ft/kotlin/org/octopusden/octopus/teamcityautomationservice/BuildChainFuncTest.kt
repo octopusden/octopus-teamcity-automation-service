@@ -34,7 +34,6 @@ import org.octopusden.octopus.teamcityautomationservice.client.common.exception.
 import org.octopusden.octopus.teamcityautomationservice.client.common.exception.ValidationException
 import org.octopusden.octopus.teamcityautomationservice.client.impl.ClassicTeamcityAutomationServiceClient
 import org.octopusden.octopus.teamcityautomationservice.client.impl.TeamcityAutomationServiceClientParametersProvider
-import java.io.File
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -349,7 +348,13 @@ class BuildChainFuncTest {
     @Test
     @Order(Int.MAX_VALUE)
     fun neverLogsTheCredentials() {
-        val log = File(serviceLogFile).readText()
+        val response =
+            HttpClient.newHttpClient().send(
+                HttpRequest.newBuilder(URI("http://$serviceHost/actuator/logfile")).GET().build(),
+                HttpResponse.BodyHandlers.ofString(),
+            )
+        Assertions.assertEquals(200, response.statusCode(), "the service log is not readable")
+        val log = response.body()
 
         Assertions.assertTrue(log.contains("Create build chain for 'ee-component'"), "the service log is not the expected one")
         listOf(SERVICE_PASSWORD, WRONG_PASSWORD).forEach { password ->
@@ -374,7 +379,6 @@ class BuildChainFuncTest {
 
         private val serviceHost = systemProperty("test.teamcity-automation-service-host")
         private val registryHostForService = systemProperty("test.components-registry-host-for-service")
-        private val serviceLogFile = systemProperty("test.service-log-file")
 
         private val client =
             ClassicTeamcityAutomationServiceClient(
