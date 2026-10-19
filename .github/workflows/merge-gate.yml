@@ -6,7 +6,6 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   build:
@@ -19,6 +18,10 @@ jobs:
 
   security:
     uses: ./.github/workflows/security.yml
+    # Only the security reports upload SARIF results.
+    permissions:
+      contents: read
+      security-events: write
     secrets: inherit
 
   gate-merge:

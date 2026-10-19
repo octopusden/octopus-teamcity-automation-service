@@ -11,13 +11,15 @@ on:
 
 permissions:
   contents: read
-  security-events: write
 
 jobs:
   security:
     # The build resolves octopus-teamcity-automation-core from GitHub Packages, so it opts in to the
     # read credentials octopus-base exports (resolve-from-shared-packages, since v3.3.0).
     uses: octopusden/octopus-base/.github/workflows/common-java-gradle-security-reports.yml@v3.3.0
+    permissions:
+      contents: read
+      security-events: write
     with:
       resolve-from-shared-packages: true
       java-version: "21"
