@@ -1,8 +1,8 @@
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.XmlReport
 import jetbrains.buildServer.configs.kotlin.buildFeatures.xmlReport
-import jetbrains.buildServer.configs.kotlin.buildSteps.gradle
 import jetbrains.buildServer.configs.kotlin.buildSteps.script
+import jetbrains.buildServer.configs.kotlin.triggers.finishBuildTrigger
 
 version = "2025.03"
 
@@ -20,17 +20,18 @@ project {
         password("env.SHARED_PACKAGES_READ_TOKEN", "%vault:octopus/data/GitHub!/OCTOPUS_SHARED_PACKAGES_READ_TOKEN%", readOnly = true)
     }
 
-    buildType(Build)
+    buildType(CompileUt)
+    buildType(Ft)
     buildType(WL_Validation_id)
 
-    buildTypesOrder = arrayListOf(Build, WL_Validation_id)
+    buildTypesOrder = arrayListOf(CompileUt, Ft, WL_Validation_id)
 }
 
-object Build : BuildType({
-    templates(AbsoluteId("Octopus_OctopusGradleBuild"))
+object CompileUt : BuildType({
+    templates(AbsoluteId("Octopus_OctopusGradleBuild"), AbsoluteId("RDDepartment_PostGithubStatus"))
     // Kept from the UI-created configuration, so its build history and number counter carry over.
     id("Build")
-    name = "[1.0] Build & FT [AUTO]"
+    name = "[1.0] Compile & UT [AUTO]"
 
     allowExternalStatus = true
     artifactRules = "%ARTIFACT_PATH%"
@@ -41,24 +42,59 @@ object Build : BuildType({
             """
             **/build/reports/** => reports
             **/build/test-results/**/*.xml => test-results
+            """.trimIndent(),
+        )
+        // Compile, unit tests and the quality gates, then push the image [2.0] tests and the deployments take.
+        param("GRADLE_TASK", "clean build dockerPushImage")
+    }
+
+    features {
+        xmlReport {
+            id = "JUnit_reports"
+            reportType = XmlReport.XmlReportType.JUNIT
+            rules = "+:**/build/test-results/test/*.xml"
+        }
+    }
+
+    requirements {
+        // docker
+        doesNotContain("env.OS_TYPE", "WIN", "RQ_LINUX")
+    }
+})
+
+object Ft : BuildType({
+    templates(AbsoluteId("Octopus_OctopusGradleBuild"))
+    id("20FtAuto")
+    name = "[2.0] FT [AUTO]"
+
+    // The same version as [1.0], so the functional tests run the very image [1.0] pushed.
+    buildNumberPattern = "${CompileUt.depParamRefs.buildNumber}"
+    artifactRules = "%ARTIFACT_PATH%"
+
+    params {
+        param(
+            "ARTIFACT_PATH",
+            """
+            ft/build/reports/** => reports
+            ft/build/test-results/**/*.xml => test-results
             ft/build/okd/** => okd
             """.trimIndent(),
         )
-        // The template's "Gradle Build & UT" step runs this: compile, unit tests and the quality gates.
-        param("GRADLE_TASK", "clean build")
-        // The functional tests, in an OKD namespace of their own: ft pushes the image under test
-        // (dockerPushImage) and creates TeamCity 2022/2026, the Components Registry and the service as pods.
-        param("GRADLE_FT_TASK", ":ft:ft")
+        param("GRADLE_TASK", "ft")
+        param("PLATFORM", "okd")
         param("OKD_PROJECT_NAME", "%OKD_F1_TEST_PROJECT%")
+        // ft creates TeamCity 2022/2026, the Components Registry and the service as pods of their own
+        // in the namespace. The image is [1.0]'s, so ft does not push one again.
         param(
             "GRADLE_EXTRA_PARAMETERS",
             """
-            -Ptest.platform=okd
+            -Ptest.platform=%PLATFORM%
             -Pokd.active-deadline-seconds=1800
             -Pokd.project=%OKD_PROJECT_NAME%
             -Pokd.cluster-domain=%OKD_APPS_DOMAIN_DEV%
             -Pokd.web-console-url=https://console-openshift-console.%OKD_APPS_DOMAIN_DEV%
             -Pokd.service-account-anyuid=teamcity
+            -x :teamcity-automation-service:dockerPushImage
             """.trimIndent(),
         )
     }
@@ -73,21 +109,6 @@ object Build : BuildType({
                 oc project %OKD_PROJECT_NAME%
                 """.trimIndent()
         }
-        gradle {
-            name = "Functional tests"
-            id = "Functional_tests"
-            tasks = "%GRADLE_FT_TASK%"
-            workingDir = "%WORK_DIR%"
-            gradleParams =
-                """
-                --info
-                %GRADLE_STANDARD_PARAMETERS%
-                %GRADLE_EXTRA_PARAMETERS%
-                """.trimIndent()
-            enableStacktrace = true
-            jdkHome = "%env.JAVA_HOME%"
-            jvmArgs = "%JDK_CMDLINE_PARAMETERS%"
-        }
         script {
             name = "Logout from the OKD cluster"
             id = "Logout_from_the_OKD_cluster"
@@ -98,15 +119,30 @@ object Build : BuildType({
                 rm -rf ~/.kube/
                 """.trimIndent()
         }
-        // RUNNER_1720 (Calculate build parameters) and RUNNER_1768 (Gradle Build & UT) come from the template.
+        // RUNNER_1720 (Calculate build parameters) and RUNNER_1768 (Gradle, running %GRADLE_TASK%) come from the template.
         stepsOrder =
             arrayListOf(
                 "RUNNER_1720",
-                "RUNNER_1768",
                 "Login_to_the_OKD_cluster",
-                "Functional_tests",
+                "RUNNER_1768",
                 "Logout_from_the_OKD_cluster",
             )
+    }
+
+    triggers {
+        finishBuildTrigger {
+            buildType = "${CompileUt.id}"
+            successfulOnly = true
+            branchFilter = "+:*"
+        }
+    }
+
+    dependencies {
+        snapshot(CompileUt) {
+            onDependencyFailure = FailureAction.FAIL_TO_START
+            onDependencyCancel = FailureAction.FAIL_TO_START
+            synchronizeRevisions = true
+        }
     }
 
     failureConditions {
@@ -117,16 +153,12 @@ object Build : BuildType({
         xmlReport {
             id = "JUnit_reports"
             reportType = XmlReport.XmlReportType.JUNIT
-            rules =
-                """
-                +:**/build/test-results/test/*.xml
-                +:ft/build/test-results/ft/*.xml
-                """.trimIndent()
+            rules = "+:ft/build/test-results/ft/*.xml"
         }
     }
 
     requirements {
-        // oc and docker
+        // oc
         doesNotContain("env.OS_TYPE", "WIN", "RQ_LINUX")
     }
 })
