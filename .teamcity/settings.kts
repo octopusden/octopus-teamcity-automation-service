@@ -26,9 +26,10 @@ project {
 
     buildType(CompileUt)
     buildType(Ft)
+    buildType(Aggregator)
     buildType(WL_Validation_id)
 
-    buildTypesOrder = arrayListOf(CompileUt, Ft, WL_Validation_id)
+    buildTypesOrder = arrayListOf(CompileUt, Ft, Aggregator, WL_Validation_id)
 }
 
 object CompileUt : BuildType({
@@ -164,6 +165,34 @@ object Ft : BuildType({
     requirements {
         // oc
         doesNotContain("env.OS_TYPE", "WIN", "RQ_LINUX")
+    }
+})
+
+object Aggregator : BuildType({
+    // Only the template's two steps: the build/integration-a commit status for the whole chain.
+    templates(AbsoluteId("RDDepartment_PostGithubStatus"))
+    id("2xAggregator")
+    name = "[2.X] Aggregator"
+
+    buildNumberPattern = "${CompileUt.depParamRefs.buildNumber}"
+
+    triggers {
+        // On every FT result, not only success: [1.0] has already posted success for the same
+        // commit, so a failed FT has to be reported from here.
+        finishBuildTrigger {
+            buildType = "${Ft.id}"
+            successfulOnly = false
+            branchFilter = "+:*"
+        }
+    }
+
+    dependencies {
+        snapshot(Ft) {
+            // Runs on a failed FT too and fails itself, so its "Failed" step posts the status.
+            onDependencyFailure = FailureAction.ADD_PROBLEM
+            onDependencyCancel = FailureAction.FAIL_TO_START
+            synchronizeRevisions = true
+        }
     }
 })
 
