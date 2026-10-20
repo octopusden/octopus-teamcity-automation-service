@@ -21,7 +21,7 @@ project {
         // every read. The token (a classic PAT with read:packages only) comes from Vault through the
         // inherited HashiCorp Vault connection, next to the other octopusden GitHub tokens.
         text("env.SHARED_PACKAGES_READ_USERNAME", "%OCTOPUS_GITHUB_USERNAME%", readOnly = true, allowEmpty = false)
-        password("env.SHARED_PACKAGES_READ_TOKEN", "%vault:octopus/data/GitHub!/OCTOPUS_SHARED_PACKAGES_READ_TOKEN%", readOnly = true)
+        password("env.SHARED_PACKAGES_READ_TOKEN", "%vault:octopus/data/GitHub!/OCTOPUS_SHARED_PACKAGES_READONLY_TOKEN%", readOnly = true)
     }
 
     buildType(CompileUt)
