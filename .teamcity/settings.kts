@@ -11,6 +11,10 @@ project {
 
     params {
         param("OCTOPUS_MODULE_NAME", "octopus-teamcity-automation-service")
+        // TEMPORARY, remove before merging: points the shared VCS root, and with it the versioned
+        // settings sync, at the branch that holds this DSL. Until the merge, main has no .teamcity/
+        // and a sync from it would read the project as deleted.
+        param("OCTOPUS_DEFAULT_BRANCH", "build-chain-service")
         param("OKD_IMAGE_NAME", "teamcity-automation-service")
         param("env.JAVA_HOME", "%env.JDK_21_0_x64%")
         // octopus-teamcity-automation-core is resolved from GitHub Packages only, which authenticates
