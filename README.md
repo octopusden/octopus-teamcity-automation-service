@@ -85,6 +85,19 @@ exports the `OCTOPUS_SHARED_PACKAGES_READ_TOKEN` repository secret (a classic PA
 ./gradlew build
 ```
 
+## Run locally
+
+The `dev` profile runs without the config server:
+
+```bash
+SPRING_PROFILES_ACTIVE=dev ./gradlew :teamcity-automation-service:bootRun
+```
+
+In IntelliJ, set *Active profiles* to `dev` on the Spring Boot run configuration. Add
+`SPRING_CONFIG_ADDITIONAL_LOCATION=server/dev/` to also expose the actuator endpoints and debug
+logging from `server/dev/application-dev.yml`. The API is then on `http://localhost:8080` with
+Swagger UI at the root.
+
 ## Functional tests
 
 `ft` runs the service image against TeamCity 2022 and 2026 and the Components Registry, on Docker
