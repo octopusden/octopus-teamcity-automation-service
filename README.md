@@ -66,6 +66,17 @@ Packages authenticates every read. A build needs a token with `read:packages`:
 export SHARED_PACKAGES_READ_USERNAME=$(gh api user -q .login) SHARED_PACKAGES_READ_TOKEN=$(gh auth token)
 ```
 
+Or keep them in `~/.gradle/gradle.properties`, outside the repository, which IDE Gradle syncs read
+as well:
+
+```properties
+sharedPackagesReadUsername=<GitHub username>
+sharedPackagesReadToken=<token with read:packages>
+```
+
+The environment variables win when both are set. `gh auth refresh -s read:packages` adds the scope
+to the GitHub CLI token.
+
 In CI, every workflow passes `resolve-from-shared-packages: true` to octopus-base, which then
 exports the `OCTOPUS_SHARED_PACKAGES_READ_TOKEN` repository secret (a classic PAT with
 `read:packages` only) under these names.

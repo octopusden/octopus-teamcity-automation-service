@@ -12,8 +12,9 @@ fun String.getExt() = project.ext[this] as String
 
 repositories {
     // The build-chain library is published to GitHub Packages only, which authenticates every read.
-    // CI gets the credentials from octopus-base (OCTOPUS_SHARED_PACKAGES_READ_TOKEN); a local build needs
-    // a personal token with read:packages in the same two variables. Exclusive, so no other repository,
+    // CI gets the credentials from octopus-base (OCTOPUS_SHARED_PACKAGES_READ_TOKEN) in the two
+    // variables. A local build can use them too, or a personal token with read:packages in
+    // ~/.gradle/gradle.properties, which IDE syncs read as well. Exclusive, so no other repository,
     // Maven Central included, is ever asked for this group.
     exclusiveContent {
         forRepository {
@@ -22,7 +23,9 @@ repositories {
                 url = uri("https://maven.pkg.github.com/octopusden/octopus-maven-packages")
                 credentials {
                     username = System.getenv("SHARED_PACKAGES_READ_USERNAME")
+                        ?: findProperty("sharedPackagesReadUsername") as String?
                     password = System.getenv("SHARED_PACKAGES_READ_TOKEN")
+                        ?: findProperty("sharedPackagesReadToken") as String?
                 }
             }
         }
